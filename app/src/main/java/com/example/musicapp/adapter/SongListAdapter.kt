@@ -9,6 +9,7 @@ import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.bumptech.glide.request.RequestOptions
 import com.example.musicapp.ActivityPlayer
 import com.example.musicapp.MyExoplayer
+import com.example.musicapp.R
 import com.example.musicapp.databinding.SongListItemRecyclerBinding
 import com.example.musicapp.model.SongsModel
 import com.google.firebase.firestore.FirebaseFirestore
@@ -31,6 +32,17 @@ class SongListAdapter(private val songIdList:List<String>) :
                                 RequestOptions().transform(RoundedCorners(32))
                             )
                             .into(binding.songCoverImageView)
+                        binding.playPauseButton.setOnClickListener {
+                            if (MyExoplayer.isPlaying()) {
+                                MyExoplayer.pausePlaying()
+                                // Update button icon to play
+                                binding.playPauseButton.setImageResource(R.drawable.baseline_play_circle_24)
+                            } else {
+                                MyExoplayer.startPlaying(binding.root.context, song)
+                                // Update button icon to pause
+                                binding.playPauseButton.setImageResource(R.drawable.baseline_pause_circle_24)
+                            }
+                        }
                         binding.root.setOnClickListener{
                             MyExoplayer.startPlaying(binding.root.context,song)
                             it.context.startActivity(Intent(it.context,ActivityPlayer::class.java))
@@ -43,7 +55,7 @@ class SongListAdapter(private val songIdList:List<String>) :
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MyViewHolder {
-       val binding = SongListItemRecyclerBinding.inflate(LayoutInflater.from(parent.context),parent,false)
+        val binding = SongListItemRecyclerBinding.inflate(LayoutInflater.from(parent.context),parent,false)
         return MyViewHolder(binding)
     }
 
@@ -52,6 +64,6 @@ class SongListAdapter(private val songIdList:List<String>) :
     }
 
     override fun onBindViewHolder(holder: MyViewHolder, position: Int) {
-       holder.bindData(songIdList[position])
+        holder.bindData(songIdList[position])
     }
 }

@@ -30,8 +30,8 @@ class ActivityPlayer : AppCompatActivity() {
         }
     }
 
-    private var playbackTimer: Handler = Handler(Looper.getMainLooper())
-    private val playbackDuration: Long = 33 * 1000 // 30 seconds
+//    private var playbackTimer: Handler = Handler(Looper.getMainLooper())
+//    private val playbackDuration: Long = 33 * 1000 // 30 seconds
     @OptIn(UnstableApi::class) override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding= ActivityPlayer2Binding.inflate(layoutInflater)
@@ -50,7 +50,7 @@ class ActivityPlayer : AppCompatActivity() {
             binding.playerView.player=exoPlayer
             binding.playerView.showController()
            exoPlayer.addListener(playerListener)
-            startPreviewPlayback()
+          //  startPreviewPlayback()
         }
     }
 
@@ -58,14 +58,14 @@ class ActivityPlayer : AppCompatActivity() {
         super.onDestroy()
         exoPlayer?.removeListener(playerListener)
     }
-    private fun startPreviewPlayback() {
-
-        exoPlayer.play()
-
-        playbackTimer.postDelayed({
-            stopPlaybackAfterPreview()
-        }, playbackDuration)
-    }
+//    private fun startPreviewPlayback() {
+//
+//        exoPlayer.play()
+//
+//        playbackTimer.postDelayed({
+//            stopPlaybackAfterPreview()
+//        }, playbackDuration)
+//    }
     private fun stopPlaybackAfterPreview() {
         exoPlayer.stop()
         exoPlayer.release()
