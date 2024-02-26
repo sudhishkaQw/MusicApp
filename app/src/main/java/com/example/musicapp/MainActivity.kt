@@ -1,12 +1,15 @@
 package com.example.musicapp
 
+
+
 import android.content.Intent
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.View
 import android.widget.PopupMenu
 import android.widget.RelativeLayout
 import android.widget.TextView
+import androidx.appcompat.app.AppCompatActivity
+import androidx.media3.common.util.UnstableApi
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
@@ -16,7 +19,6 @@ import com.example.musicapp.adapter.CategoryAdapter
 import com.example.musicapp.adapter.SectionListSongAdapter
 import com.example.musicapp.databinding.ActivityMainBinding
 import com.example.musicapp.model.CategoryModel
-import com.example.musicapp.model.PlaybackViewModel
 import com.example.musicapp.model.SongsModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -26,7 +28,7 @@ import com.google.firebase.firestore.toObjects
 class MainActivity : AppCompatActivity() {
     lateinit var binding: ActivityMainBinding
     lateinit var categoryAdapter: CategoryAdapter
-    override fun onCreate(savedInstanceState: Bundle?) {
+    @UnstableApi override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -45,7 +47,7 @@ class MainActivity : AppCompatActivity() {
                 // Change the button icon to play icon
                 binding.playerButton.setImageResource(R.drawable.baseline_play_circle_24)
             } else {
-                MyExoplayer.startOrResume()
+              //  MyExoplayer.startOrResume()
                 binding.playerButton.setImageResource(R.drawable.baseline_pause_circle_24)
             }
         }
@@ -61,10 +63,26 @@ class MainActivity : AppCompatActivity() {
         inflator.inflate(R.menu.menu_option,popupMenu.menu)
         popupMenu.show()
         popupMenu.setOnMenuItemClickListener {
-            when(it.itemId){
+            when (it.itemId) {
                 R.id.logout -> {
                     logout()
                     true
+                }
+            R.id.userProfile ->
+            {
+                startActivity(Intent(this@MainActivity,ProfileActivity::class.java))
+            }
+                R.id.purchasedSongs->
+                {
+                    startActivity(Intent(this@MainActivity,PurchasedSongs::class.java))
+                }
+                R.id.offlinePlaylist->
+                {
+                    startActivity(Intent(this@MainActivity,OfflinePlaylist::class.java))
+                }
+                R.id.fav->
+                {
+                    startActivity(Intent(this@MainActivity,FavoritePlaylist::class.java))
                 }
             }
             false
@@ -72,7 +90,7 @@ class MainActivity : AppCompatActivity() {
 
     }
     fun logout(){
-        MyExoplayer.getInstance()?.release()
+
         FirebaseAuth.getInstance().signOut()
         startActivity(Intent(this,LoginActivity::class.java))
         finish()
@@ -145,7 +163,7 @@ class MainActivity : AppCompatActivity() {
                     .get()
                     .addOnSuccessListener {songListSnapshot->
                        val songsModelList= songListSnapshot.toObjects<SongsModel>()
-                        val songIdList=songsModelList.map {
+                        val songIdList =songsModelList.map {
                             it.id
                         }.toList()
                         val section = it.toObject(CategoryModel::class.java)

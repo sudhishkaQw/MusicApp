@@ -8,7 +8,6 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.bumptech.glide.request.RequestOptions
 import com.example.musicapp.ActivityPlayer
-import com.example.musicapp.MyExoplayer
 import com.example.musicapp.databinding.SectionSongListRecyclerBinding
 import com.example.musicapp.model.SongsModel
 import com.google.firebase.firestore.FirebaseFirestore
@@ -17,7 +16,7 @@ class SectionListSongAdapter (private val songIdList:List<String>) :
     RecyclerView.Adapter<SectionListSongAdapter.MyViewHolder>() {
     class MyViewHolder(private val binding: SectionSongListRecyclerBinding) :
         RecyclerView.ViewHolder(binding.root) {
-        fun bindData(songId: String) {
+        fun bindData(songId: String, songIdList: List<String>, position: Int) {
             FirebaseFirestore.getInstance().collection("songs")
                 .document(songId).get()
                 .addOnSuccessListener {
@@ -31,9 +30,10 @@ class SectionListSongAdapter (private val songIdList:List<String>) :
                             )
                             .into(binding.section1CoverImage)
                         binding.root.setOnClickListener {
-                            MyExoplayer.startPlaying(binding.root.context, song)
-                            it.context.startActivity(Intent(it.context, ActivityPlayer::class.java))
-
+                            val intent = Intent(it.context, ActivityPlayer::class.java)
+                            intent.putExtra("index",position)
+                            intent.putStringArrayListExtra("songsList",songIdList as ArrayList<String>)
+                            it.context.startActivity(intent)
                         }
                     }
                 }
@@ -55,6 +55,6 @@ class SectionListSongAdapter (private val songIdList:List<String>) :
     }
 
     override fun onBindViewHolder(holder: MyViewHolder, position: Int) {
-        holder.bindData(songIdList[position])
+        holder.bindData(songIdList[position],songIdList,position)
     }
 }

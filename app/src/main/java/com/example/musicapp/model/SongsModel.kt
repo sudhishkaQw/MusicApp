@@ -6,7 +6,11 @@ data class SongsModel(
     val subtitle:String,
     val url:String,
     val coverUrl:String,
+    val credits:Int,
+    var downloaded : Boolean,
+    val audioFileName: String,
+    var isFavorite:Boolean
 )
 {
-    constructor():this("","","","","")
+    constructor():this("","","","","",10,true,"",true)
 }

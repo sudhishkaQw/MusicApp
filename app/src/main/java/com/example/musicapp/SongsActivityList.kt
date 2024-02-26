@@ -1,12 +1,11 @@
 package com.example.musicapp
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.bumptech.glide.request.RequestOptions
-import com.example.musicapp.adapter.CategoryAdapter
 import com.example.musicapp.adapter.SongListAdapter
 import com.example.musicapp.databinding.ActivitySongsListBinding
 import com.example.musicapp.model.CategoryModel
@@ -14,7 +13,7 @@ import com.example.musicapp.model.CategoryModel
 class SongsActivityList : AppCompatActivity() {
     companion object
     {
-        lateinit var category:CategoryModel
+        var category:CategoryModel=CategoryModel()
     }
     lateinit var binding: ActivitySongsListBinding
     lateinit var songListAdapter: SongListAdapter

@@ -3,9 +3,10 @@
     android:layout_width="match_parent"
     xmlns:tools="http://schemas.android.com/tools"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:padding="16dp"
+    android:padding="12dp"
+    android:layout_marginTop="10dp"
     android:background="@drawable/rounded_corner"
-    android:backgroundTint="@color/lighter"
+    android:backgroundTint="@color/lightBlack"
     android:layout_height="wrap_content">
 
     <ImageView
@@ -36,6 +37,7 @@
         android:layout_height="wrap_content"
         android:textSize="18sp"
         tools:text="Song name"
+        android:fontFamily="sans-serif"
         android:textColor="@color/white"
         android:textStyle="bold"
         android:id="@+id/songTextView"/>
@@ -43,10 +45,12 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textSize="18sp"
+            android:fontFamily="sans-serif"
             tools:text="Song subtitle"
             android:textColor="@color/lightGrey"
             android:textStyle="bold"
             android:id="@+id/songSubtitleView"/>
+
 
     </LinearLayout>
 </RelativeLayout>

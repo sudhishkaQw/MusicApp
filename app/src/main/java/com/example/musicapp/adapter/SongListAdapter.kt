@@ -1,5 +1,6 @@
 package com.example.musicapp.adapter
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.view.LayoutInflater
 import android.view.ViewGroup
@@ -14,11 +15,27 @@ import com.example.musicapp.databinding.SongListItemRecyclerBinding
 import com.example.musicapp.model.SongsModel
 import com.google.firebase.firestore.FirebaseFirestore
 
-class SongListAdapter(private val songIdList:List<String>) :
+class SongListAdapter(private var songIdList:List<String>) :
     RecyclerView.Adapter<SongListAdapter.MyViewHolder>(){
+
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MyViewHolder {
+        val binding = SongListItemRecyclerBinding.inflate(LayoutInflater.from(parent.context),parent,false)
+        return MyViewHolder(binding)
+    }
+
+    override fun getItemCount(): Int {
+        return  songIdList.size
+    }
+
+    override fun onBindViewHolder(holder: MyViewHolder, position: Int) {
+        holder.bindData(songIdList[position],songIdList,position)
+    }
+
     class MyViewHolder(private val binding: SongListItemRecyclerBinding ):RecyclerView.ViewHolder(binding.root)
     {
-        fun bindData(songId : String)
+        @SuppressLint("UnsafeOptInUsageError")
+        fun bindData(songId: String, songIdList: List<String>, position: Int)
         {
             FirebaseFirestore.getInstance().collection("songs")
                 .document(songId).get()
@@ -43,27 +60,18 @@ class SongListAdapter(private val songIdList:List<String>) :
                                 binding.playPauseButton.setImageResource(R.drawable.baseline_pause_circle_24)
                             }
                         }
-                        binding.root.setOnClickListener{
-                            MyExoplayer.startPlaying(binding.root.context,song)
-                            it.context.startActivity(Intent(it.context,ActivityPlayer::class.java))
+                        binding.root.setOnClickListener{ it ->
+                            val intent = Intent(it.context, ActivityPlayer::class.java)
+                            intent.putExtra("index",position)
+                            intent.putStringArrayListExtra("songsList",songIdList as ArrayList<String>)
+                            it.context.startActivity(intent)
 
                         }
                     }
                 }
 
         }
+
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MyViewHolder {
-        val binding = SongListItemRecyclerBinding.inflate(LayoutInflater.from(parent.context),parent,false)
-        return MyViewHolder(binding)
-    }
-
-    override fun getItemCount(): Int {
-        return  songIdList.size
-    }
-
-    override fun onBindViewHolder(holder: MyViewHolder, position: Int) {
-        holder.bindData(songIdList[position])
-    }
 }

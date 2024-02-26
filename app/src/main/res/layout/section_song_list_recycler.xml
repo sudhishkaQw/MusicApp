@@ -17,12 +17,14 @@
         android:layout_marginTop="8dp"
         android:text="Song name"
         android:textSize="18sp"
+        android:fontFamily="sans-serif"
         android:textColor="@color/white"
         android:id="@+id/sectionSongTitle"/>
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
+        android:fontFamily="sans-serif"
         android:text="Song subtitle"
         android:textColor="@color/lightGrey"
         android:id="@+id/section1SongSubtitle"/>
