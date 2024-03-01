@@ -1,75 +1,102 @@
-    package com.example.musicapp.adapter
 
-    import android.content.Intent
-    import android.view.LayoutInflater
-    import android.view.ViewGroup
-    import androidx.recyclerview.widget.RecyclerView
-    import com.bumptech.glide.Glide
-    import com.bumptech.glide.load.resource.bitmap.RoundedCorners
-    import com.bumptech.glide.request.RequestOptions
-    import com.example.musicapp.ActivityPlayer
-    import com.example.musicapp.MyExoplayer
-    import com.example.musicapp.R
-    import com.example.musicapp.databinding.SongListItemRecyclerBinding
-    import com.example.musicapp.model.SongsModel
+import android.content.Intent
+import android.view.LayoutInflater
+import android.view.ViewGroup
+import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.resource.bitmap.RoundedCorners
+import com.bumptech.glide.request.RequestOptions
+import com.example.musicapp.ActivityPlayer
+import com.example.musicapp.CustomPlayer
+import com.example.musicapp.R
+import com.example.musicapp.databinding.SongListItemRecyclerBinding
+import com.example.musicapp.model.SongsModel
 
-    class PurchasedSongAdapter(private var purchasedSongsWithCover: List<Pair<SongsModel, String>>) :
-        RecyclerView.Adapter<PurchasedSongAdapter.ViewHolder>() {
+class PurchasedSongAdapter(private var purchasedSongsWithCover: List<Pair<SongsModel, String>>,private val customPlayer: CustomPlayer) :
+    RecyclerView.Adapter<PurchasedSongAdapter.ViewHolder>() {
+    private var currentPlayingPosition: Int? = null
+    inner class ViewHolder(private val binding: SongListItemRecyclerBinding) :
+        RecyclerView.ViewHolder(binding.root) {
 
-        inner class ViewHolder(private val binding: SongListItemRecyclerBinding) :
-            RecyclerView.ViewHolder(binding.root) {
-
-            fun bind(
-                songWithCover: Pair<SongsModel, String>,
-                purchasedSongsWithCover: List<Pair<SongsModel, String>>,
-                position: Int
-            ) {
-                val (song, coverUrl) = songWithCover
-                with(binding) {
-                    songTextView.text = song.title
-                    songSubtitleView.text = song.subtitle
-                    Glide.with(songCoverImageView)
-                        .load(coverUrl)
-                        .apply(RequestOptions().transform(RoundedCorners(32)))
-                        .into(songCoverImageView)
-                    playPauseButton.setOnClickListener {
-                        if (MyExoplayer.isPlaying()) {
-                            MyExoplayer.pausePlaying()
-                            // Update button icon to play
-                            playPauseButton.setImageResource(R.drawable.baseline_play_circle_24)
+        fun bind(
+            songWithCover: Pair<SongsModel, String>,
+            purchasedSongsWithCover: List<Pair<SongsModel, String>>,
+            position: Int
+        ) {
+            val (song, coverUrl) = songWithCover
+            with(binding) {
+                songTextView.text = song.title
+                songSubtitleView.text = song.subtitle
+                Glide.with(songCoverImageView)
+                    .load(coverUrl)
+                    .apply(RequestOptions().transform(RoundedCorners(32)))
+                    .into(songCoverImageView)
+                if (position == currentPlayingPosition) {
+                    if (customPlayer.isPlaying()) {
+                        binding.playPauseButton.setImageResource(R.drawable.baseline_pause_circle_24)
+                    } else {
+                        binding.playPauseButton.setImageResource(R.drawable.baseline_play_circle_24)
+                    }
+                } else {
+                    // Song is not currently playing, set play icon
+                    binding.playPauseButton.setImageResource(R.drawable.baseline_play_circle_24)
+                }
+                // Play or pause the song when the play/pause button is clicked
+                binding.playPauseButton.setOnClickListener {
+                    if (currentPlayingPosition == position) {
+                        // Clicked on the same song, toggle play/pause
+                        if (customPlayer.isPlaying()) {
+                            customPlayer.pause()
+                            binding.playPauseButton.setImageResource(R.drawable.baseline_play_circle_24)
                         } else {
-                            MyExoplayer.startPlaying(binding.root.context, song)
-                            // Update button icon to pause
-                            playPauseButton.setImageResource(R.drawable.baseline_pause_circle_24)
+                            customPlayer.play(song.url ?: "")
+                            binding.playPauseButton.setImageResource(R.drawable.baseline_pause_circle_24)
                         }
+                    } else {
+                        // Clicked on a different song, stop current playback and start new one
+                        currentPlayingPosition?.let { oldPosition ->
+                            notifyItemChanged(oldPosition)
+                        }
+                        currentPlayingPosition = position
+                        customPlayer.play(song.url ?: "")
+                        binding.playPauseButton.setImageResource(R.drawable.baseline_pause_circle_24)
                     }
-                    root.setOnClickListener {
-                        val intent = Intent(it.context, ActivityPlayer::class.java)
-                        intent.putExtra("index",position)
-                        intent.putStringArrayListExtra("songsList",purchasedSongsWithCover as ArrayList<String>)
-                        it.context.startActivity(intent)
+                }
+                root.setOnClickListener {
+                    val intent = Intent(it.context, ActivityPlayer::class.java)
+                    intent.putExtra("From", "formPurchaseSong")
+                    intent.putExtra("index", position)
+                    val songsList = ArrayList<SongsModel>()
+                    purchasedSongsWithCover.forEach { pair ->
+                        songsList.add(pair.first)
                     }
+                    intent.putParcelableArrayListExtra("songsList", songsList)
+                    it.context.startActivity(intent)
                 }
             }
         }
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-            val binding = SongListItemRecyclerBinding.inflate(
-                LayoutInflater.from(parent.context),
-                parent,
-                false
-            )
-            return ViewHolder(binding)
-        }
-
-        override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-            holder.bind(purchasedSongsWithCover[position],purchasedSongsWithCover,position)
-        }
-
-        override fun getItemCount(): Int {
-            return purchasedSongsWithCover.size
-        }
-        fun updatePurchasedSongs(newPurchasedSongsWithCover: List<Pair<SongsModel, String>>) {
-            purchasedSongsWithCover = newPurchasedSongsWithCover
-            notifyDataSetChanged()
-        }
     }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        val binding = SongListItemRecyclerBinding.inflate(
+            LayoutInflater.from(parent.context),
+            parent,
+            false
+        )
+        return ViewHolder(binding)
+    }
+
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+
+        holder.bind(purchasedSongsWithCover[position], purchasedSongsWithCover, position)
+    }
+
+    override fun getItemCount(): Int {
+        return purchasedSongsWithCover.size
+    }
+
+    fun updatePurchasedSongs(newPurchasedSongsWithCover: List<Pair<SongsModel, String?>>) {
+        purchasedSongsWithCover = newPurchasedSongsWithCover as List<Pair<SongsModel, String>>
+        notifyDataSetChanged()
+    }
+}

@@ -26,8 +26,9 @@
         android:layout_gravity="center"
         android:id="@+id/songCover"/>
     <ImageView
-        android:layout_width="270dp"
-        android:layout_height="270dp"
+        android:layout_width="280dp"
+        android:layout_height="280dp"
+        android:visibility="invisible"
         android:id="@+id/songGifImageView"
         android:layout_gravity="center"/>
     </FrameLayout>
@@ -164,25 +165,25 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/linearLayout4">
-        <ImageButton
-            android:layout_width="30dp"
-            android:layout_height="30dp"
-            android:layout_marginTop="10dp"
-            android:src="@drawable/baseline_favorite_border_24"
-            android:background="@color/tranparent"
-            android:id="@+id/favSong"/>
+<!--        <ImageButton-->
+<!--            android:layout_width="30dp"-->
+<!--            android:layout_height="30dp"-->
+<!--            android:layout_marginTop="10dp"-->
+<!--            android:src="@drawable/baseline_favorite_border_24"-->
+<!--            android:background="@color/tranparent"-->
+<!--            android:id="@+id/favSong"/>-->
 
 <ImageButton
     android:layout_width="50dp"
     android:layout_height="50dp"
-    android:layout_marginStart="30dp"
     android:background="@drawable/buy"
+    android:layout_gravity="center_horizontal"
     android:id="@+id/buy"/>
     <ImageButton
         android:layout_width="30dp"
         android:layout_height="30dp"
         android:layout_marginTop="10dp"
-        android:layout_marginStart="30dp"
+        android:layout_marginStart="20dp"
         android:layout_alignRight="@id/buy"
         android:layout_alignParentEnd="true"
         android:background="@drawable/direct_download"

@@ -3,16 +3,17 @@ package com.example.musicapp
 import android.util.Log
 import com.example.musicapp.model.SongsModel
 import com.example.musicapp.model.UserModel
-import com.google.android.gms.tasks.Tasks
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.DocumentSnapshot
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 
 class UserFetcher {
 
+
     private val db = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
+
 
     suspend fun addNewUser(userData: Map<String, Any>) {
         // Get the current user's ID from Firebase Authentication
@@ -21,6 +22,8 @@ class UserFetcher {
         // Access the "users" collection in Firestore and add a new document with the current user's ID
         db.collection("users").document(userId).set(userData).await()
     }
+
+
 
     fun deductCreditScoreFromUser(
         requiredCreditScore: Long,
@@ -73,55 +76,36 @@ class UserFetcher {
             }
     }
 
-
-   suspend fun fetchFavoriteSongs(
-        onSuccess: (List<SongsModel>) -> Unit,
+    fun fetchFavoriteSongs(
+        userId: String,
+        onSuccess: (List<String>) -> Unit,
         onFailure: (Exception) -> Unit
     ) {
-        try {
-            // Get the current user's ID from Firebase Authentication
-            val userId = auth.currentUser?.uid
-            if (userId != null) {
-                // Fetch the user document from Firestore
-                val userDocRef = db.collection("users").document(userId).get().await()
-                if (userDocRef.exists()) {
-                    // Parse the user document into a UserModel object
-                    val user = userDocRef.toObject(UserModel::class.java)
-                    user?.let { userModel ->
-                        // Filter the favorite songs from the user's purchased songs list
-                        val favoriteSongsIds = userModel.purchasedSongs.filter { it.isNotBlank() }
-                        val favoriteSongs = mutableListOf<SongsModel>()
+        // Reference to the user document in Firestore
+        val userRef = db.collection("users").document(userId)
 
-                        // Fetch details of the favorite songs using their IDs
-                        for (songId in favoriteSongsIds) {
-                            val song = fetchSongDetails(songId)
-                            song?.let { favoriteSongs.add(it) }
-                        }
-                        // Invoke the onSuccess callback with the list of favorite songs
-                        onSuccess(favoriteSongs)
-                    } ?: onFailure(Exception("Failed to parse user data"))
+        // Fetch the user document
+        userRef.get()
+            .addOnSuccessListener { document ->
+                if (document.exists()) {
+                    // Retrieve the list of favorite songs from the user document
+                    val favoriteSongs = document.get("favoriteSongs") as? List<String> ?: emptyList()
+                    onSuccess(favoriteSongs)
                 } else {
                     onFailure(Exception("User document does not exist"))
                 }
-            } else {
-                onFailure(Exception("User ID not found"))
             }
-        } catch (e: Exception) {
-            // Invoke the onFailure callback if an error occurs
-            onFailure(e)
-        }
+            .addOnFailureListener { e ->
+                onFailure(e)
+            }
     }
 
     private suspend fun fetchSongDetails(songId: String): SongsModel? {
         return try {
-            // Check if the songId is not empty or blank
             if (songId.isNotBlank()) {
-                // Fetch the song document from Firestore
                 val documentSnapshot = db.collection("songs").document(songId).get().await()
-                // Parse the song document into a SongsModel object
                 documentSnapshot.toObject(SongsModel::class.java)
             } else {
-                Log.e(TAG, "Error fetching song details: Empty or blank songId")
                 null
             }
         } catch (e: Exception) {
@@ -130,9 +114,60 @@ class UserFetcher {
         }
     }
 
+
+    suspend fun fetchPurchasedSongsForCurrentUser(
+        onSuccess: (List<Pair<SongsModel, String>>) -> Unit,
+        onFailure: (Exception) -> Unit
+    ) {
+        try {
+            val userId = FirebaseAuth.getInstance().currentUser?.uid
+            if (userId != null) {
+                val userDocRef = db.collection("users").document(userId).get().await()
+                if (userDocRef.exists()) {
+                    val user = userDocRef.toObject(UserModel::class.java)
+                    user?.let { userModel ->
+                        val purchasedSongsIds = userModel.purchasedSongs.filter { it.isNotBlank() }
+                        val purchasedSongs = mutableListOf<SongsModel>()
+
+                        // Log the retrieved purchased songs
+                        Log.d(TAG, "Purchased Songs IDs: $purchasedSongsIds")
+
+                        // Fetch details of each purchased song
+                        purchasedSongsIds.forEach { songId ->
+                            val song = fetchSongDetails(songId)
+                            song?.let { purchasedSongs.add(it) }
+                        }
+
+                        // Map the purchased songs to pairs with their cover URLs
+                        val purchasedSongCovers: List<Pair<SongsModel, String>> = purchasedSongs.map { it to (it.coverUrl ?: "") }
+
+                        onSuccess(purchasedSongCovers)
+                    } ?: onFailure(Exception("Failed to parse user data"))
+                } else {
+                    onFailure(Exception("User document does not exist"))
+                }
+            } else {
+                onFailure(Exception("User ID not found"))
+            }
+        } catch (e: Exception) {
+            onFailure(e)
+        }
+    }
+
+
+    suspend fun getUserDetails(): UserModel? {
+        // Get the current user's ID from Firebase Authentication
+        val userId = auth.currentUser?.uid ?: return null
+
+        // Retrieve user details from Firestore
+        val documentSnapshot = db.collection("users").document(userId).get().await()
+        return documentSnapshot.toObject(UserModel::class.java)
+    }
+
     companion object {
         private const val TAG = "UserFetcher"
     }
+
 
 
     //    fun getUserDetails(onSuccess: (Map<String, Any>) -> Unit, onFailure: (Exception) -> Unit) {
@@ -186,94 +221,218 @@ class UserFetcher {
                 }
         }
     }
-    suspend fun fetchPurchasedSongsForCurrentUser(
-        onSuccess: (List<SongsModel>) -> Unit,
+
+    fun purchaseSong(
+        song: SongsModel,
+        onSuccess: () -> Unit,
         onFailure: (Exception) -> Unit
     ) {
-        try {
-            val userId = FirebaseAuth.getInstance().currentUser?.uid
-            if (userId != null) {
-                val userDocRef = db.collection("users").document(userId).get().await()
-                if (userDocRef.exists()) {
-                    val user = userDocRef.toObject(UserModel::class.java)
-                    user?.let { userModel ->
-                        val purchasedSongsIds = userModel.purchasedSongs.filter { it.isNotBlank() } // Filter out empty or blank song IDs
-                        val purchasedSongs = mutableListOf<SongsModel>()
+        // Get the current user's document reference
+        val userDocRef = db.collection("users").document(auth.currentUser?.uid ?: return)
 
-                        for (songId in purchasedSongsIds) {
-                            val song = fetchSongDetails(songId)
-                            song?.let { purchasedSongs.add(it) }
+        // Deduct credits from the user's credit score for purchasing the song
+        val requiredCreditScore = 10L // Assuming each song costs 10 credits
+        userDocRef.get()
+            .addOnSuccessListener { document ->
+                val currentCreditScore = document.getLong("creditScore") ?: 0
+                if (currentCreditScore >= requiredCreditScore) {
+                    // Sufficient credits, proceed with the purchase
+                    val newCreditScore = currentCreditScore - requiredCreditScore
+
+                    // Update the user's document with the new credit score and add the purchased song
+                    val purchasedSongs = document.get("purchasedSongs") as? List<String> ?: emptyList()
+                    val newPurchasedSongs = purchasedSongs + song.id
+
+                    userDocRef.update(
+                        mapOf(
+                            "creditScore" to newCreditScore,
+                            "purchasedSongs" to newPurchasedSongs
+                        )
+                    )
+                        .addOnSuccessListener {
+                            // Credit score updated and song purchased successfully
+                            onSuccess()
                         }
-                        onSuccess(purchasedSongs)
-                    } ?: onFailure(Exception("Failed to parse user data"))
+                        .addOnFailureListener { e ->
+                            // Handle failure to update user document
+                            onFailure(e)
+                        }
                 } else {
-                    onFailure(Exception("User document does not exist"))
+                    // Insufficient credits, notify the caller
+                    onFailure(IllegalStateException("Insufficient credits to purchase the song"))
                 }
-            } else {
-                onFailure(Exception("User ID not found"))
             }
+            .addOnFailureListener { e ->
+                // Handle failure to fetch user document
+                onFailure(e)
+            }
+    }
+
+
+    suspend fun fetchRemainingCredit(): Long {
+        return try {
+            val userId = auth.currentUser?.uid ?: return 0L
+            val userDocRef = db.collection("users").document(userId).get().await()
+            userDocRef.getLong("creditScore") ?: 0L
         } catch (e: Exception) {
-            onFailure(e)
+            Log.e(TAG, "Error fetching remaining credit", e)
+            0L
         }
     }
-    suspend fun getUserDetails(): UserModel? {
-        // Get the current user's ID from Firebase Authentication
-        val userId = auth.currentUser?.uid ?: return null
+    suspend fun getUserCreditScore(): Long {
+        try {
+            // Get the current user's ID from Firebase Authentication
+            val userId = auth.currentUser?.uid ?: throw IllegalStateException("User not authenticated")
 
-        // Retrieve user details from Firestore
-        val documentSnapshot = db.collection("users").document(userId).get().await()
-        return documentSnapshot.toObject(UserModel::class.java)
-    }
-
-    suspend fun fetchPurchasedSongs(): List<SongsModel> {
-        val user = getUserDetails() ?: return emptyList()
-        val purchasedSongIds = user.purchasedSongs
-
-        // Fetch details of purchased songs using their IDs
-        val tasks = purchasedSongIds.map { songId ->
-            db.collection("songs").document(songId).get()
-        }
-
-        val songSnapshots = Tasks.whenAllComplete(tasks).await()
-        return songSnapshots.mapNotNull { task ->
-            if (task.isSuccessful) {
-                val documentSnapshot = task.result as? DocumentSnapshot
-                documentSnapshot?.toObject(SongsModel::class.java)
-            } else {
-                null
-            }
+            // Retrieve user details from Firestore
+            val documentSnapshot = db.collection("users").document(userId).get().await()
+            return documentSnapshot.getLong("creditScore") ?: 0L
+        } catch (e: Exception) {
+            Log.e(TAG, "Error fetching user credit score", e)
+            return 0L
         }
     }
 
-    suspend fun purchaseSong(
-        user: UserModel,
+    // In UserFetcher class
+//    suspend fun fetchFavoriteSongs(
+//        onSuccess: (List<String>) -> Unit,
+//        onFailure: (Exception) -> Unit
+//    ) {
+//        // Get the current user's ID
+//        val userId = auth.currentUser?.uid
+//        if (userId != null) {
+//            // Fetch the user document from Firestore
+//            db.collection("users").document(userId).get()
+//                .addOnSuccessListener { document ->
+//                    if (document.exists()) {
+//                        // Retrieve the list of favorite songs from the user document
+//                        val favoriteSongs = document.get("favoriteSongs") as? List<String> ?: emptyList()
+//                        onSuccess(favoriteSongs)
+//                    } else {
+//                        onFailure(Exception("User document does not exist"))
+//                    }
+//                }
+//                .addOnFailureListener { e ->
+//                    onFailure(e)
+//                }
+//        } else {
+//            onFailure(IllegalStateException("User ID not found"))
+//        }
+//    }
+
+    // Function to add a song to favorites
+    fun addSongToFavorites(
+        userId: String,
         songId: String,
-        onSuccess: (UserModel) -> Unit,
+        onSuccess: () -> Unit,
         onFailure: (Exception) -> Unit
     ) {
-        try {
-            // Add the purchased song ID to the user's purchased songs list
-            val updatedPurchasedSongs = user.purchasedSongs.toMutableList().apply {
-                add(songId)
+        val userDocRef = db.collection("users").document(userId)
+
+        // Update the favoriteSongs field of the user document
+        userDocRef.update("favoriteSongs", FieldValue.arrayUnion(songId))
+            .addOnSuccessListener {
+                onSuccess()
+            }
+            .addOnFailureListener { exception ->
+                onFailure(exception)
+            }
+    }
+
+    fun isSongPurchased(songId: String, onSuccess: (Boolean) -> Unit, onFailure: (Exception) -> Unit) {
+        val userId = FirebaseAuth.getInstance().currentUser?.uid
+        if (userId != null) {
+            val userDocRef = FirebaseFirestore.getInstance().collection("users").document(userId)
+            userDocRef.get()
+                .addOnSuccessListener { documentSnapshot ->
+                    if (documentSnapshot.exists()) {
+                        val purchasedSongs = documentSnapshot.get("purchasedSongs") as? List<String> ?: emptyList()
+                        val isPurchased = purchasedSongs.contains(songId)
+                        onSuccess(isPurchased)
+                    } else {
+                        onFailure(IllegalStateException("User document does not exist"))
+                    }
+                }
+                .addOnFailureListener { exception ->
+                    onFailure(exception)
+                }
+        } else {
+            onFailure(IllegalStateException("User not authenticated"))
+        }
+    }
+
+
+    suspend fun fetchFavoriteSongsForCurrentUser(): List<SongsModel> {
+        val userId = auth.currentUser?.uid ?: throw IllegalStateException("User not authenticated")
+        val userDocRef = db.collection("users").document(userId)
+        val documentSnapshot = userDocRef.get().await()
+
+        if (documentSnapshot.exists()) {
+            val favoriteSongIds = documentSnapshot.get("favoriteSongs") as? List<String> ?: emptyList()
+            val favoriteSongs = mutableListOf<SongsModel>()
+
+            for (songId in favoriteSongIds) {
+                val song = fetchSongDetails(songId)
+                song?.let { favoriteSongs.add(it) }
             }
 
-            // Create a copy of the user object with the updated purchased songs list
-            val updatedUser = user.copy(purchasedSongs = updatedPurchasedSongs)
-
-            // Update the user document in Firestore
-            db.collection("users")
-                .document(user.uid)
-                .set(updatedUser)
-                .await()
-
-            // Call the onSuccess callback with the updated user object
-            onSuccess(updatedUser)
-        } catch (e: Exception) {
-            // Call the onFailure callback if an error occurs
-            onFailure(e)
+            return favoriteSongs
+        } else {
+            throw IllegalStateException("User document does not exist")
         }
+    }
+
+    // Function to remove a song from favorites
+    fun removeSongFromFavorites(
+        songId: String,
+        onSuccess: () -> Unit,
+        onFailure: (Exception) -> Unit
+    ) {
+        val userId = auth.currentUser?.uid
+        if (userId != null) {
+            // Update the user document to remove the song from favorites
+            db.collection("users").document(userId)
+                .update("favoriteSongs", FieldValue.arrayRemove(songId))
+                .addOnSuccessListener {
+                    onSuccess()
+                }
+                .addOnFailureListener { exception ->
+                    onFailure(exception)
+                }
+        } else {
+            onFailure(IllegalStateException("User not authenticated"))
+        }
+    }
+    suspend fun fetchPurchasedSongIdsForCurrentUser(): List<String> {
+        val userId = FirebaseAuth.getInstance().currentUser?.uid
+        if (userId != null) {
+            val userDocRef = FirebaseFirestore.getInstance().collection("users").document(userId).get().await()
+            if (userDocRef.exists()) {
+                val user = userDocRef.toObject(UserModel::class.java)
+                return user?.purchasedSongs ?: emptyList()
+            }
+        }
+        return emptyList()
     }
 }
+
+    // Other existing methods...
+
+
+
+
+
+
+
+    // Function to fetch the user's credit score
+
+    // Function to fetch purchased songs for the current user
+
+
+
+
+
+
 
 
 

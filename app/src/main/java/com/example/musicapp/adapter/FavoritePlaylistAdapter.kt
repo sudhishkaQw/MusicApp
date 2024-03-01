@@ -14,13 +14,13 @@ import com.example.musicapp.databinding.SongListItemRecyclerBinding
 import com.example.musicapp.model.SongsModel
 import com.google.firebase.firestore.FirebaseFirestore
 
-class FavoritePlaylistAdapter(private var songIdList:List<String>) :
+class FavoritePlaylistAdapter(private var favoriteSongs: List<SongsModel>) :
     RecyclerView.Adapter<FavoritePlaylistAdapter.ViewHolder>() {
 
      class ViewHolder(private val binding: SongListItemRecyclerBinding) :
         RecyclerView.ViewHolder(binding.root) {
 
-        fun bind(songId: String, songIdList: List<String>, position: Int) {
+        fun bind(songId: String, songIdList: List<SongsModel>, position: Int) {
             FirebaseFirestore.getInstance().collection("songs")
                 .document(songId).get()
                 .addOnSuccessListener {
@@ -71,16 +71,18 @@ class FavoritePlaylistAdapter(private var songIdList:List<String>) :
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.bind(songIdList[position],songIdList,position)
+        holder.bind(favoriteSongs[position].toString(),favoriteSongs,position)
     }
 
     override fun getItemCount(): Int {
-        return  songIdList.size
+        return  favoriteSongs.size
     }
-
-
-    fun updateFavoriteSongs(newFavoriteSongIds: List<String>) {
-        songIdList = newFavoriteSongIds
+    fun updateList(newList: List<SongsModel>) {
+        favoriteSongs = newList
         notifyDataSetChanged()
     }
+
+
+
+
 }

@@ -21,6 +21,13 @@ object MyExoplayer {
     {
         return exoPlayer
     }
+
+
+        fun resumePlaying() {
+            exoPlayer?.play()
+        }
+
+
     fun startPlaying(context: Context, song: SongsModel)
     {   if(exoPlayer==null)
         exoPlayer=ExoPlayer.Builder(context).build()

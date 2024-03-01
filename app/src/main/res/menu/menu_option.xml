@@ -8,6 +8,6 @@
         android:title="Purchased songs"/>
     <item android:title="Your Anytime Playlist"
         android:id="@+id/offlinePlaylist"/>
-    <item android:id="@+id/fav"
-        android:title="Favorites"/>
+<!--    <item android:id="@+id/fav"-->
+<!--        android:title="Favorites"/>-->
 </menu>

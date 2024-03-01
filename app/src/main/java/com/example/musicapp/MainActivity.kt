@@ -80,10 +80,10 @@ class MainActivity : AppCompatActivity() {
                 {
                     startActivity(Intent(this@MainActivity,OfflinePlaylist::class.java))
                 }
-                R.id.fav->
-                {
-                    startActivity(Intent(this@MainActivity,FavoritePlaylist::class.java))
-                }
+//                R.id.fav->
+//                {
+//                    startActivity(Intent(this@MainActivity,FavoritePlaylist::class.java))
+//                }
             }
             false
         }
@@ -168,7 +168,7 @@ class MainActivity : AppCompatActivity() {
                         }.toList()
                         val section = it.toObject(CategoryModel::class.java)
                         section?.apply {
-                            section.songs=songIdList
+                            section.songs= songIdList as List<String>
                             mainLayout.visibility= View.VISIBLE
                             titleView.text=name
                             recyclerView.layoutManager=LinearLayoutManager(this@MainActivity,LinearLayoutManager.HORIZONTAL,false)

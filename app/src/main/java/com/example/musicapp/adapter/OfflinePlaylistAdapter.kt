@@ -9,18 +9,18 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.bumptech.glide.request.RequestOptions
 import com.example.musicapp.ActivityPlayer
-import com.example.musicapp.MyExoplayer
+import com.example.musicapp.CustomPlayer
 import com.example.musicapp.R
 import com.example.musicapp.databinding.SongListItemRecyclerBinding
 import com.example.musicapp.model.SongsModel
 
-class OfflinePlaylistAdapter(private var context: Context,private var songs: MutableList<SongsModel>) :
+class OfflinePlaylistAdapter(private var context: Context,private var songs: MutableList<SongsModel>,private val customPlayer: CustomPlayer) :
     RecyclerView.Adapter<OfflinePlaylistAdapter.ViewHolder>()  {
-
+    private var currentPlayingPosition: Int? = null
     inner class ViewHolder(private val binding: SongListItemRecyclerBinding) :
         RecyclerView.ViewHolder(binding.root) {
 
-        fun bind(song: SongsModel) {
+        fun bind(song: SongsModel, songs: MutableList<SongsModel>, position: Int) {
             with(binding) {
                 songTextView.text = song.title
                 songSubtitleView.text = song.subtitle
@@ -29,21 +29,47 @@ class OfflinePlaylistAdapter(private var context: Context,private var songs: Mut
                     .apply(RequestOptions().transform(RoundedCorners(32)))
                     .into(songCoverImageView)
 
-                playPauseButton.setOnClickListener {
-                    if (MyExoplayer.isPlaying()) {
-                        MyExoplayer.pausePlaying()
-                        // Update button icon to play
-                        playPauseButton.setImageResource(R.drawable.baseline_play_circle_24)
+                if (position == currentPlayingPosition) {
+                    if (customPlayer.isPlaying()) {
+                        binding.playPauseButton.setImageResource(R.drawable.baseline_pause_circle_24)
                     } else {
-                        MyExoplayer.startPlaying(context, song)
-                        // Update button icon to pause
-                        playPauseButton.setImageResource(R.drawable.baseline_pause_circle_24)
+                        binding.playPauseButton.setImageResource(R.drawable.baseline_play_circle_24)
+                    }
+                } else {
+                    // Song is not currently playing, set play icon
+                    binding.playPauseButton.setImageResource(R.drawable.baseline_play_circle_24)
+                }
+                // Play or pause the song when the play/pause button is clicked
+                binding.playPauseButton.setOnClickListener {
+                    if (currentPlayingPosition == position) {
+                        // Clicked on the same song, toggle play/pause
+                        if (customPlayer.isPlaying()) {
+                            customPlayer.pause()
+                            binding.playPauseButton.setImageResource(R.drawable.baseline_play_circle_24)
+                        } else {
+                            customPlayer.play(song.url ?: "")
+                            binding.playPauseButton.setImageResource(R.drawable.baseline_pause_circle_24)
+                        }
+                    } else {
+                        // Clicked on a different song, stop current playback and start new one
+                        currentPlayingPosition?.let { oldPosition ->
+                            notifyItemChanged(oldPosition)
+                        }
+                        currentPlayingPosition = position
+                        customPlayer.play(song.url ?: "")
+                        binding.playPauseButton.setImageResource(R.drawable.baseline_pause_circle_24)
                     }
                 }
 
+                // In OfflinePlaylistAdapter class, inside ViewHolder's root click listener
                 root.setOnClickListener {
-                    MyExoplayer.startPlaying(context, song)
-                    context.startActivity(Intent(context, ActivityPlayer::class.java))
+                    val intent = Intent(it.context, ActivityPlayer::class.java).apply {
+                        // Pass the list of songs as a parcelable ArrayList
+                        putExtra("From","Offline")
+                        putParcelableArrayListExtra("offline_Song_list", ArrayList(songs))
+                        putExtra("index", position) // Pass the index of the clicked song
+                    }
+                    it.context.startActivity(intent)
                 }
             }
         }
@@ -57,22 +83,23 @@ class OfflinePlaylistAdapter(private var context: Context,private var songs: Mut
         )
         return ViewHolder(binding)
     }
-//    fun updateDownloadedSongs(downloadedSongs: List<SongsModel>) {
+    //    fun updateDownloadedSongs(downloadedSongs: List<SongsModel>) {
 //        this.downloadedSongs.clear()
 //        this.downloadedSongs.addAll(downloadedSongs)
 //        notifyDataSetChanged()
 //    }
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.bind(songs[position])
+        holder.bind(songs[position],songs,position )
     }
 
     override fun getItemCount(): Int {
         return songs.size
     }
 
-    fun addSong(song: SongsModel) {
-        songs.add(song)
-        notifyItemInserted(songs.size - 1)
+    fun updateSongsList(updatedSongs: List<SongsModel>) {
+        songs.clear()
+        songs.addAll(updatedSongs)
+        notifyDataSetChanged()
     }
 }
 //    private fun isSongAvailableOffline(song: SongsModel): Boolean {

@@ -2,6 +2,7 @@ package com.example.musicapp
 import android.annotation.SuppressLint
 import android.content.ContentValues.TAG
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.media.MediaPlayer
 import android.os.Bundle
 import android.os.Handler
@@ -10,273 +11,120 @@ import android.util.Log
 import android.view.View
 import android.widget.SeekBar
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import com.bumptech.glide.Glide
+import com.example.musicapp.adapter.SongListAdapter
 import com.example.musicapp.databinding.ActivityPlayer2Binding
 import com.example.musicapp.model.SongsModel
 import com.example.musicapp.model.UserModel
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-
-
-//
-//import android.content.ContentValues.TAG
-//import android.content.Intent
-//import android.os.Bundle
-//import android.util.Log
-//import android.view.View
-//import android.widget.Toast
-//import androidx.annotation.OptIn
-//import androidx.appcompat.app.AppCompatActivity
-//import androidx.media3.common.Player
-//import androidx.media3.common.util.UnstableApi
-//import androidx.media3.exoplayer.ExoPlayer
-//import com.bumptech.glide.Glide
-//import com.example.musicapp.adapter.PurchasedSongAdapter
-//import com.example.musicapp.databinding.ActivityPlayer2Binding
-//import com.example.musicapp.model.SongsModel
-//
-//class ActivityPlayer : AppCompatActivity() {
-//    private lateinit var binding: ActivityPlayer2Binding
-//    private lateinit var exoPlayer: ExoPlayer
-//    private lateinit var currentSong: SongsModel
-//    private lateinit var purchasedSongAdapter: PurchasedSongAdapter
-//    private val userFetcher = UserFetcher()
-//    private var playerListener = object:Player.Listener{
-//        override fun onIsPlayingChanged(isPlaying: Boolean) {
-//            super.onIsPlayingChanged(isPlaying)
-//            showGif(isPlaying)
-//        }
-//        override fun onPlaybackStateChanged(playbackState: Int) {
-//            super.onPlaybackStateChanged(playbackState)
-//            if (playbackState == Player.STATE_ENDED) {
-//
-//                stopPlaybackAfterPreview()
-//            }
-//        }
-//    }
-//
-//    //    private var playbackTimer: Handler = Handler(Looper.getMainLooper())
-////    private val playbackDuration: Long = 33 * 1000 // 30 seconds
-//    @OptIn(UnstableApi::class) override fun onCreate(savedInstanceState: Bundle?) {
-//        super.onCreate(savedInstanceState)
-//        binding= ActivityPlayer2Binding.inflate(layoutInflater)
-//        setContentView(binding.root)
-//
-//        MyExoplayer.getCurrentSong()?.apply {
-//            binding.songTitleTextview.text = title
-//            binding.songSubtitleTextview.text  = subtitle
-//            Glide.with(binding.songCover).load(coverUrl)
-//                .circleCrop()
-//                .into(binding.songCover)
-//            Glide.with(binding.songGifImageView).load(R.drawable.media_playing)
-//                .circleCrop()
-//                .into(binding.songGifImageView)
-//            exoPlayer = MyExoplayer.getInstance(this@ActivityPlayer)!!
-//            binding.playerView.player=exoPlayer
-//            binding.playerView.showController()
-//            exoPlayer.addListener(playerListener)
-//
-////            binding.nextButton.setOnClickListener {
-////                MyExoplayer.playNext(this@ActivityPlayer)
-////            }
-////            binding.previousButton.setOnClickListener {
-////                MyExoplayer.playPrevious(this@ActivityPlayer)
-////            }
-//            //  startPreviewPlayback()
-//        }
-//        binding.buy.setOnClickListener {
-//            Toast.makeText(this@ActivityPlayer, "Initiating purchase process...", Toast.LENGTH_SHORT).show()
-//            val currentSong = MyExoplayer.getCurrentSong()
-//            if (currentSong != null) {
-//                buyNowButtonClicked(currentSong)
-//            } else {
-//                Toast.makeText(this@ActivityPlayer, "No song is currently playing", Toast.LENGTH_SHORT).show()
-//            }
-//        }
-//    }
-//
-//
-//
-//    override fun onDestroy() {
-//        super.onDestroy()
-//        exoPlayer?.removeListener(playerListener)
-//    }
-//    //    private fun startPreviewPlayback() {
-////
-////        exoPlayer.play()
-////
-////        playbackTimer.postDelayed({
-////            stopPlaybackAfterPreview()
-////        }, playbackDuration)
-////    }
-//    private fun stopPlaybackAfterPreview() {
-//        exoPlayer.stop()
-//        exoPlayer.release()
-//    }
-//    fun showGif(show:Boolean)
-//    {
-//        if(show)
-//            binding.songGifImageView.visibility= View.VISIBLE
-//        else{
-//            binding.songGifImageView.visibility=View.INVISIBLE
-//        }
-//    }
-//    private fun buyNowButtonClicked(song: SongsModel) {
-//        // Initiate the purchase process
-//        purchaseSong(song)
-//    }
-//
-//    private fun purchaseSong(song: SongsModel) {
-//
-//        onPurchaseSuccess(song)
-//    }    private fun onPurchaseSuccess(song: SongsModel) {
-//
-//        addSongToPurchasedList(song)
-//    }
-//
-//    private fun addSongToPurchasedList(song: SongsModel) {
-//
-//        Toast.makeText(this, "Song purchased successfully!", Toast.LENGTH_SHORT).show()
-//
-//
-//        deductCreditsFromUser()
-//    }
-//    private fun deductCreditsFromUser() {
-//        val userFetcher=UserFetcher()
-//        userFetcher.deductCreditScoreFromUser(
-//            requiredCreditScore = 10, // Deduct 10 credits for buying the song
-//            onSuccess = { newCreditScore ->
-//                // Show a message or handle success as needed
-//               Toast.makeText(this, "Song purchased successfully", Toast.LENGTH_SHORT).show()
-//
-//                // Update the credit score in the profile activity
-//                updateCreditScoreInProfileActivity(newCreditScore)
-//            },
-//            onFailure = { exception ->
-//                // Handle failure to deduct credits
-//                Log.e(TAG, "Error deducting credits from user", exception)
-//                Toast.makeText(this, "Failed to purchase song", Toast.LENGTH_SHORT).show()
-//            }
-//        )
-//    }
-//
-//
-//    private fun updateCreditScoreInProfileActivity(newCreditScore: Long) {
-//        // Send the new credit score back to the profile activity
-//        val intent = Intent(this, ProfileActivity::class.java)
-//        intent.putExtra("NEW_CREDIT_SCORE", newCreditScore)
-//        startActivity(intent)
-//    }
-//
-//
-//
-//}
-//2nd  code////-----------------------------------------------------------------------------------
-//2nd  code////-----------------------------------------------------------------------------------
-//2nd  code////-----------------------------------------------------------------------------------
-//2nd  code////-----------------------------------------------------------------------------------
-//2nd  code////-----------------------------------------------------------------------------------
-//2nd  code////-----------------------------------------------------------------------------------
-//2nd  code////-----------------------------------------------------------------------------------
-
-// 3rdd code
-
-
+import java.io.File
+import java.io.FileOutputStream
+import java.io.InputStream
+import java.net.URL
+import java.util.Timer
+import java.util.TimerTask
 
 class ActivityPlayer : AppCompatActivity(), Runnable {
     private lateinit var binding: ActivityPlayer2Binding
+
+    private var currentSongIndex: Int = 0
+    private var mediaPlayer: MediaPlayer? = null
+    private var songList: ArrayList<String>? = null
+    private var handler: Handler? = null
+    private var isSongPlaying: Boolean = false
+    private var from: String? = null
+    private lateinit var songListAdapter: SongListAdapter
+    private  var isFavorite: Boolean = false
+    private  var isSongPurchased:Boolean=false
+    private lateinit var userFetcher: UserFetcher
+    private lateinit var userModel: UserModel
+    private var purchanseSong: ArrayList<SongsModel>? = null
+    private var offlineSongs:ArrayList<SongsModel>?=null
     private lateinit var currentSong: SongsModel
-    private val userFetcher = UserFetcher()
-    private var currentSongIndex : Int = 0
-    private var mediaPlayer : MediaPlayer? = null
-    private var songList : ArrayList<String>? = null
-    private var handler : Handler? = null
-    private var isSongPlaying : Boolean = false
+    private lateinit var purchasedSongIds: List<String>
 
-
-    //    private var playbackTimer: Handler = Handler(Looper.getMainLooper())
-//    private val playbackDuration: Long = 33 * 1000 // 30 seconds
     @SuppressLint("UnsafeOptInUsageError")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityPlayer2Binding.inflate(layoutInflater)
         setContentView(binding.root)
         val intent = intent
-
-        songList = intent.getStringArrayListExtra("songsList")
-        currentSongIndex = intent.getIntExtra("index", 0)
+        userModel = UserModel()
         mediaPlayer = MediaPlayer()
         handler = Handler(Looper.getMainLooper())
+        from = intent.getStringExtra("From")
+        userFetcher = UserFetcher()
+        currentSong= SongsModel()
 
-//        MyExoplayer.getCurrentSong()?.apply {
-//            currentSong=(MyExoplayer.getCurrentSong()!!)
-//            binding.songTitleTextview.text = title
-//            binding.songSubtitleTextview.text  = subtitle
-//            Glide.with(binding.songCover).load(coverUrl)
-//                .circleCrop()
-//                .into(binding.songCover)
-//            Glide.with(binding.songGifImageView).load(R.drawable.media_playing)
-//                .circleCrop()
-//                .into(binding.songGifImageView)
-
-        //  startPreviewPlayback()
-        binding.buy.setOnClickListener {
-            Toast.makeText(
-                this@ActivityPlayer,
-                "Initiating purchase process...",
-                Toast.LENGTH_SHORT
-            ).show()
-            GlobalScope.launch(Dispatchers.Main) {
-                buyNowButtonClicked()
+        if (from.equals("formPurchaseSong")) {
+            purchanseSong = intent?.getParcelableArrayListExtra("songsList")
+            currentSongIndex = intent.getIntExtra("index", 0)
+            playPurchaseSong(currentSongIndex)
+        }
+        else if(from.equals("Offline")) {
+            offlineSongs=intent.getParcelableArrayListExtra<SongsModel>("offline_Song_list")
+            currentSongIndex = intent.getIntExtra("index", 0)
+            playOfflineSong(currentSongIndex)
+        }
+        else {
+            songList = intent.getStringArrayListExtra("songsList")
+            currentSongIndex = intent.getIntExtra("index", 0)
+            if(songList!=null)
+            {
+                playSong(currentSongIndex)
             }
         }
+//        currentSong = SongsModel()
+//        if (songList != null) {
+//            playSong(currentSongIndex)
+//        }
 
-//            binding.download.visibility = if (downloaded) View.GONE else View.VISIBLE
-//            binding.download.setOnClickListener {
-//                downloadSong(this)
-//            }
-
-
-                    // Simulated download action
-//                    val downloadedSong = SongsModel(
-//                        id = "unique_id",
-//                        title = "Downloaded Song",
-//                        subtitle = "Artist Name",
-//                        url = "downloaded_song_url",
-//                        coverUrl = "cover_image_url",
-//                        credits = 10,
-//                        downloaded = true, // Set downloaded to true
-//
-//                    // Add the downloaded song to the offline playlist
-//                        addSongToOfflinePlaylist(dow)
-
-        if(songList != null)
-        {
-            playSong(currentSongIndex)
-        }
 
         binding.previousButton.setOnClickListener {
-            if(songList != null)
-            {
-                if(currentSongIndex != 0)
-                {
+            if (songList != null) {
+                if (currentSongIndex != 0) {
 
                     mediaPlayer?.pause()
                     currentSongIndex--
                     playSong(currentSongIndex)
                 }
+            } else if (purchanseSong != null) {
+
+                if (currentSongIndex != 0) {
+
+                    mediaPlayer?.pause()
+                    currentSongIndex--
+                    playPurchaseSong(currentSongIndex)
+                }
             }
-        }
-        binding.nextButton.setOnClickListener {
-            if(songList != null)
+            else
             {
-                if(currentSongIndex < songList!!.size-1)
+                if(offlineSongs!=null)
                 {
+                    if(currentSongIndex!=0)
+                    {
+                        mediaPlayer?.pause()
+                        currentSongIndex--
+                        playOfflineSong(currentSongIndex)
+                    }
+                }
+            }
+
+        }
+
+
+
+        binding.nextButton.setOnClickListener {
+            if (songList != null) {
+                if (currentSongIndex < songList!!.size - 1) {
                     // Pause MediaPlayer
                     mediaPlayer?.pause()
 
@@ -288,9 +136,39 @@ class ActivityPlayer : AppCompatActivity(), Runnable {
 
                     // Play next song
                     playSong(currentSongIndex)
+
+                }
+            } else if (purchanseSong != null) {
+                if (currentSongIndex < purchanseSong!!.size - 1) {
+                    // Pause MediaPlayer
+                    mediaPlayer?.pause()
+
+                    // Increment currentSongIndex
+                    currentSongIndex++
+
+                    // Reset MediaPlayer
+                    mediaPlayer?.reset()
+
+                    // Play next song
+                    playPurchaseSong(currentSongIndex)
                 }
             }
+            else
+            {
+                if(offlineSongs!=null)
+                {
+                    if(currentSongIndex<offlineSongs!!.size-1)
+                    {
+                        mediaPlayer?.pause()
+                        currentSongIndex++
+                        playOfflineSong(currentSongIndex)
+                    }
+                }
+            }
+
         }
+
+
 
         binding.seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
@@ -300,7 +178,6 @@ class ActivityPlayer : AppCompatActivity(), Runnable {
             }
 
             override fun onStartTrackingTouch(seekBar: SeekBar?) {
-                // No action needed
             }
 
             override fun onStopTrackingTouch(seekBar: SeekBar?) {
@@ -308,215 +185,591 @@ class ActivityPlayer : AppCompatActivity(), Runnable {
             }
         })
 
+
         binding.play.setOnClickListener {
-            if(isSongPlaying)
-            {
+            if (isSongPlaying) {
                 binding.play.setBackgroundResource(R.drawable.baseline_play_arrow_24)
                 mediaPlayer?.pause()
                 binding.seekBar.removeCallbacks(createUpdateSeekBarRunnable())
-            }
-            else
-            {
+                showGif(false)
+            } else {
                 binding.play.setBackgroundResource(R.drawable.baseline_pause_24)
                 mediaPlayer?.start()
                 createUpdateSeekBarRunnable()
+                showGif(true)
             }
             isSongPlaying = !isSongPlaying
         }
-    }
-
-
-//    private fun addSongToOfflinePlaylist(song: SongsModel) {
-//        // Assuming OfflinePlaylistActivity is already running or will be started
-//        val offlinePlaylistActivityIntent = OfflinePlaylistActivity.newIntent(this, song)
-//        startActivity(offlinePlaylistActivityIntent)
-//
-//        Toast.makeText(this, "Song downloaded and added to playlist", Toast.LENGTH_SHORT).show()
-//    }
-
-
-//    override fun onDestroy() {
-//        super.onDestroy()
-//        exoPlayer?.removeListener(playerListener)
-//    }
-    //    private fun startPreviewPlayback() {
-//
-//        exoPlayer.play()
-//
-//        playbackTimer.postDelayed({
-//            stopPlaybackAfterPreview()
-//        }, playbackDuration)
-//    }
-//    private fun stopPlaybackAfterPreview() {
-//        exoPlayer.stop()
-//        exoPlayer.release()
-//    }
-    fun showGif(show:Boolean)
-    {
-        if(show)
-            binding.songGifImageView.visibility= View.VISIBLE
-        else{
-            binding.songGifImageView.visibility=View.INVISIBLE
-        }
-        binding.favSong.setOnClickListener {
-                toggleFavorite()
-        }
-    }
-//        private fun deductCreditsFromUser() {
-//        val userFetcher=UserFetcher()
-//        userFetcher.deductCreditScoreFromUser(
-//            requiredCreditScore = 10, // Deduct 10 credits for buying the song
-//            onSuccess = { newCreditScore ->
-//                // Show a message or handle success as needed
-//               Toast.makeText(this, "Song purchased successfully", Toast.LENGTH_SHORT).show()
-//
-//                // Update the credit score in the profile activity
-//                updateCreditScoreInProfileActivity(newCreditScore)
-//            },
-//            onFailure = { exception ->
-//                // Handle failure to deduct credits
-//                Log.e(TAG, "Error deducting credits from user", exception)
-//                Toast.makeText(this, "Failed to purchase song", Toast.LENGTH_SHORT).show()
-//            }
-//        )
-//    }
-    private suspend fun buyNowButtonClicked() {
-        // Get the current user
-        val currentUser = getCurrentUser()
-
-        if (currentUser != null) {
-            if (currentSong != null) {
-                // Initiate the purchase process
-                purchaseSong(currentUser, currentSong)
-            } else {
-                Toast.makeText(this@ActivityPlayer, "No song selected", Toast.LENGTH_SHORT).show()
+        binding.buy.setOnClickListener {
+            GlobalScope.launch(Dispatchers.Main) {
+                purchaseCurrentSong()
             }
-        } else {
-            Toast.makeText(this@ActivityPlayer, "User not logged in", Toast.LENGTH_SHORT).show()
+        }
+        binding.download.setOnClickListener {
+            checkIfSongIsPurchased()
+        }
+
+
+    }
+    override fun onResume() {
+        super.onResume()
+        GlobalScope.launch(Dispatchers.Main) {
+            fetchPurchasedSongs()
         }
     }
 
+    private suspend fun fetchPurchasedSongs() {
+        userFetcher.fetchPurchasedSongsForCurrentUser(
+            onSuccess = { purchasedSongs ->
+                // Check if the current song ID is in the list of purchased song IDs
+                val isSongPurchased = purchasedSongs.any { it.first.id == currentSong.id }
 
-
-    private fun getCurrentUser(): UserModel? {
-        val firebaseUser: FirebaseUser? = FirebaseAuth.getInstance().currentUser
-        return firebaseUser?.let {
-            UserModel(
-                username = it.displayName ?: "",
-                profileImage = it.photoUrl?.toString() ?: "",
-                creditScore = 500, // Default credit score
-                uid = it.uid
-            )
-        }
-    }
-
-    private suspend fun purchaseSong(user: UserModel, song: SongsModel) {
-        if (user != null) {
-            val userId = user.uid
-            val updatedPurchasedSongs = mutableListOf<String>()
-            userFetcher.fetchPurchasedSongsForCurrentUser(
-                onSuccess = { purchasedSongs ->
-                    updatedPurchasedSongs.addAll(purchasedSongs.map { it.id })
-                    if (!updatedPurchasedSongs.contains(song.id)) {
-                        updatedPurchasedSongs.add(song.id)
-                        updateUserPurchasedSongs(userId, song.id)
+                // Update UI based on whether the song is purchased
+                if (isSongPurchased) {
+                    hideBuyButton() // Hide buy button if the song is purchased
+                    if (isSongDownloaded(currentSong.id!!)) {
+                        hideDownloadButton() // Hide download button if the song is downloaded
                     } else {
-                        Toast.makeText(this@ActivityPlayer, "Song already purchased", Toast.LENGTH_SHORT).show()
+                        showDownloadButton() // Show download button if the song is purchased but not downloaded
+                    }
+                } else {
+                    showBuyButton() // Show buy button if the song is not purchased
+                    hideDownloadButton() // Hide download button if the song is not purchased
+                }
+
+                // Show alert if the song is already purchased
+                if (isSongPurchased) {
+                    showAlreadyPurchasedAlert()
+                }
+            },
+            onFailure = { exception ->
+                // Handle failure to fetch purchased songs
+                Log.e(TAG, "Failed to fetch purchased songs", exception)
+                Toast.makeText(this, "Failed to fetch purchased songs: ${exception.message}", Toast.LENGTH_SHORT).show()
+            }
+        )
+    }
+
+    private fun showAlreadyPurchasedAlert() {
+        AlertDialog.Builder(this)
+            .setTitle("Already Purchased")
+            .setMessage("You have already purchased this song.")
+            .setPositiveButton("OK", null)
+            .show()
+    }
+
+    private fun isSongDownloaded(songId: String): Boolean {
+        // Get the directory where downloaded songs are stored
+        val storageDir = getExternalFilesDir(null)?.absolutePath + "/Downloads"
+
+        // Create a File object for the song file
+        val songFile = File("$storageDir/$songId.mp3")
+
+        // Check if the song file exists
+        return songFile.exists()
+    }
+    private fun hideBuyButton() {
+        binding.buy.visibility = View.GONE
+    }
+
+    private fun hideDownloadButton() {
+        binding.download.visibility = View.GONE
+    }
+
+    private fun checkSongPurchaseAndDownload(song: SongsModel) {
+        song.id?.let {
+            userFetcher.isSongPurchased(
+                it,
+                onSuccess = { isPurchased ->
+                    if (isPurchased) {
+                        // Song is purchased, allow download
+                        checkDownload(song)
+                    } else {
+                        // Song is not purchased, show a message
+                        showToast("To download this song, please purchase it first.")
                     }
                 },
                 onFailure = { exception ->
-                    Log.e(TAG, "Error fetching purchased songs", exception)
-                    Toast.makeText(this@ActivityPlayer, "Failed to purchase song", Toast.LENGTH_SHORT).show()
+                    // Handle failure to check song purchase status
+                    showToast("Error checking song purchase status: ${exception.message}")
                 }
             )
+        }
+    }
+    private fun checkDownload(song: SongsModel)
+    {
+        Toast.makeText(this, "Download Successfull", Toast.LENGTH_SHORT).show()
+        if (ContextCompat.checkSelfPermission(
+                this,
+                android.Manifest.permission.WRITE_EXTERNAL_STORAGE
+            )
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            // Request write permission if not granted
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(android.Manifest.permission.WRITE_EXTERNAL_STORAGE),
+                REQUEST_WRITE_EXTERNAL_STORAGE
+            )
         } else {
-            Toast.makeText(this@ActivityPlayer, "User not logged in", Toast.LENGTH_SHORT).show()
+            // Permission granted, start download
+            downloadSong(userModel.uid)
+        }
+    }
+    private fun showPurchaseDialog() {
+        // Show pop-up dialog indicating that download is only available after purchase
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle("Download Unavailable")
+        builder.setMessage("This song is only available for download after purchase.")
+        builder.setPositiveButton("OK") { dialog, which ->
+            // Handle the OK button click if needed
+        }
+        val dialog = builder.create()
+        dialog.show()
+    }
+
+
+    private fun isSongPurchased(songId: String, onSuccess: (Boolean) -> Unit, onFailure: (Exception) -> Unit) {
+        // Check if the song is purchased for the current user
+        val userId = FirebaseAuth.getInstance().currentUser?.uid
+        if (userId != null) {
+            val userDocRef = FirebaseFirestore.getInstance().collection("users").document(userId)
+            userDocRef.get()
+                .addOnSuccessListener { documentSnapshot ->
+                    if (documentSnapshot.exists()) {
+                        val purchasedSongs = documentSnapshot.get("purchasedSongs") as? List<String> ?: emptyList()
+                        val isPurchased = purchasedSongs.contains(songId)
+                        onSuccess(isPurchased)
+                    } else {
+                        onFailure(IllegalStateException("User document does not exist"))
+                    }
+                }
+                .addOnFailureListener { exception ->
+                    onFailure(exception)
+                }
+        } else {
+            onFailure(IllegalStateException("User not authenticated"))
         }
     }
 
-    private fun updateUserPurchasedSongs(userId: String, purchasedSongId: String) {
-        val db = FirebaseFirestore.getInstance()
-        val userRef = db.collection("users").document(userId)
-        userRef.get()
-            .addOnSuccessListener { documentSnapshot ->
-                if (documentSnapshot.exists()) {
-                    val purchasedSongs = documentSnapshot.toObject(UserModel::class.java)?.purchasedSongs?.toMutableList()
-                        ?: mutableListOf()
-                    if (!purchasedSongs.contains(purchasedSongId)) {
-                        purchasedSongs.add(purchasedSongId)
-                        userRef.update("purchasedSongs", purchasedSongs)
-                            .addOnSuccessListener {
-                                // Successfully updated purchased songs
-                                Toast.makeText(this@ActivityPlayer, "Song purchased successfully", Toast.LENGTH_SHORT).show()
-                                updateCreditScoreInProfileActivity()
-                            }
-                            .addOnFailureListener { e ->
-                                Log.e(TAG, "Error updating purchased songs", e)
-                                Toast.makeText(this@ActivityPlayer, "Failed to purchase song", Toast.LENGTH_SHORT).show()
-                            }
-                    } else {
-                        // Song already purchased
-                        Toast.makeText(this@ActivityPlayer, "Song already purchased", Toast.LENGTH_SHORT).show()
+    private fun playSongForLimitedTime(songUrl: String) {
+        mediaPlayer?.apply {
+            reset()
+            setDataSource(songUrl)
+            setOnPreparedListener { mp ->
+                mp.start()
+                val timer = Timer()
+                timer.schedule(object : TimerTask() {
+                    override fun run() {
+                        mp.stop()
+                        mp.release()
+                        timer.cancel() // Cancel the timer
+                        showToast("You need to purchase the song to listen to the whole track.")
                     }
-                } else {
-                    // User document does not exist
-                    Toast.makeText(this@ActivityPlayer, "User document does not exist", Toast.LENGTH_SHORT).show()
-                }
+                }, 30 * 1000) // 30 seconds in milliseconds
+
+                // Disable seek bar interaction
+                binding.seekBar.isEnabled = false
+
+                isSongPlaying = true
+                binding.play.setBackgroundResource(R.drawable.baseline_pause_24)
             }
-            .addOnFailureListener { e ->
-                // Error fetching user document
-                Log.e(TAG, "Error fetching user document", e)
-                Toast.makeText(this@ActivityPlayer, "Failed to purchase song", Toast.LENGTH_SHORT).show()
+            setOnErrorListener { mp, what, extra ->
+                // Handle error here (optional)
+                return@setOnErrorListener false
             }
+            prepareAsync()
+        }
     }
+
+
+
+    private fun addCurrentSongToFavorites() {
+        val userId = userModel.uid
+        val songId = currentSong.id
+        if (userId != null && songId != null) {
+            userFetcher.addSongToFavorites(userId, songId,
+                onSuccess = {
+                    // Handle success, if needed
+                    // For example, show a toast indicating success
+                    showToast("Song added to favorites")
+                },
+                onFailure = { exception ->
+                    // Handle failure
+                    // For example, show a toast with the error message
+                    showToast("Failed to add song to favorites: ${exception.message}")
+                }
+            )
+        }
+    }
+
+
+    private fun downloadSong(userId: String) {
+        // Replace the following with actual code to download the song
+        val songUrl = "https://example.com/song.mp3"
+        val fileName = "song_$userId.mp3" // Append userId to the filename
+        val storageDir = File(getExternalFilesDir(null), "Downloads")
+        storageDir.mkdirs()
+
+        val file = File(storageDir, fileName)
+        if (!file.exists()) {
+            val url = URL(songUrl)
+            val connection = url.openConnection()
+            connection.connect()
+            val input: InputStream = connection.getInputStream()
+            val output = FileOutputStream(file)
+            val buffer = ByteArray(1024)
+            var bytesRead: Int
+            while (input.read(buffer).also { bytesRead = it } != -1) {
+                output.write(buffer, 0, bytesRead)
+            }
+            output.close()
+            input.close()
+            Toast.makeText(this, "Song downloaded", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(this, "Song already downloaded", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    // Function to remove the song from favorites
+    private fun removeFromFavorites() {
+        currentSong.id?.let { songId ->
+            userFetcher?.removeSongFromFavorites(songId,
+                onSuccess = {
+                    showToast("Song removed from favorites")
+                    // Update the drawable resource to unfilled when song is removed from favorites
+                    //        binding.favSong.setImageResource(R.drawable.baseline_favorite_border_24)
+                    // Update the isFavorite flag
+                    isFavorite = false
+                },
+                onFailure = { exception ->
+                    showToast("Failed to remove song from favorites: ${exception.message}")
+                })
+        }
+    }
+
+    private fun playPurchaseSong(currentSongIndex: Int) {
+        val song = purchanseSong?.get(currentSongIndex)
+        binding.songTitleTextview.text = song?.title
+        binding.songSubtitleTextview.text = song?.subtitle
+        Glide.with(binding.songCover).load(song?.coverUrl)
+            .circleCrop()
+            .into(binding.songCover)
+        Glide.with(binding.songGifImageView).load(R.drawable.media_playing)
+            .circleCrop()
+            .into(binding.songGifImageView)
+        song?.url?.let { url ->
+            mediaPlayer?.apply {
+                reset()
+                setDataSource(url)
+                setOnPreparedListener { mp ->
+                    // Start playback when prepared
+                    mp.start()
+                    val totalLength = mediaPlayer?.duration ?: 0
+                    binding.endChronometer.text = formatTime(totalLength)
+                    createUpdateSeekBarRunnable().run()
+                    isSongPlaying = true
+                    binding.play.setBackgroundResource(R.drawable.baseline_pause_24)
+                }
+                prepareAsync()
+            }
+        }
+
+    }
+    private suspend fun purchaseCurrentSong() {
+        // Ensure that the current song is properly initialized
+        val song = if (from == "formPurchaseSong") {
+            purchanseSong?.get(currentSongIndex)
+        } else {
+            // Retrieve the song from the songList if not from purchase
+            FirebaseFirestore.getInstance().collection("songs")
+                .document(songList!![currentSongIndex]).get()
+                .addOnSuccessListener { document ->
+                    val song = document.toObject(SongsModel::class.java)
+                    song?.let {
+                        currentSong = it
+                        // Call isSongPurchased to check if the song is already purchased
+                        isSongPurchased(
+                            song.id!!,
+                            onSuccess = { isPurchased ->
+                                if (isPurchased) {
+                                    // Song is already purchased, show alert message
+                                    showAlreadyPurchasedAlert()
+                                } else {
+                                    // Song is not purchased, proceed with purchasing
+                                    userFetcher.purchaseSong(
+                                        currentSong,
+                                        onSuccess = {
+                                            showToast("Song purchased successfully")
+                                            // Hide the buy button after successful purchase
+                                            hideBuyButton()
+                                        },
+                                        onFailure = { exception ->
+                                            showToast("Failed to purchase song: ${exception.message}")
+                                        }
+                                    )
+                                }
+                            },
+                            onFailure = { exception ->
+                                showToast("Failed to check song purchase status: ${exception.message}")
+                            }
+                        )
+                    }
+                }
+                .addOnFailureListener { exception ->
+                    showToast("Failed to retrieve song: ${exception.message}")
+                }
+            return
+        }
+
+        // Call isSongPurchased to check if the song is already purchased
+        song?.id?.let { songId ->
+            isSongPurchased(
+                songId,
+                onSuccess = { isPurchased ->
+                    if (isPurchased) {
+                        // Song is already purchased, show alert message
+                        showAlreadyPurchasedAlert()
+                    } else {
+                        // Song is not purchased, proceed with purchasing
+                        userFetcher.purchaseSong(
+                            song,
+                            onSuccess = {
+                                showToast("Song purchased successfully")
+                                // Hide the buy button after successful purchase
+                                hideBuyButton()
+                            },
+                            onFailure = { exception ->
+                                showToast("Failed to purchase song: ${exception.message}")
+                            }
+                        )
+                    }
+                },
+                onFailure = { exception ->
+                    showToast("Failed to check song purchase status: ${exception.message}")
+                }
+            )
+        }
+    }
+
+    private fun checkIfSongIsPurchased() {
+        // Ensure currentSong is properly initialized
+        val currentSong = SongsModel() // Initialize with appropriate values
+
+        // Check if currentSong's ID is not null
+        currentSong.id?.let { songId ->
+            // Call isSongPurchased with currentSong object
+            isSongPurchased(currentSong.id,
+                onSuccess = { isPurchased ->
+                    if (isPurchased) {
+                        // Song is purchased, allow download and play
+                        enableDownloadButton()
+                    } else {
+                        // Song is not purchased, show pop-up dialog
+                        showPurchaseDialog()
+                    }
+                },
+                onFailure = { exception ->
+                    // Handle failure to check song purchase status
+                    Log.e(TAG, "Error checking song purchase status", exception)
+                    // Display an error message
+                    showToast("Failed to check song purchase status")
+                }
+            )
+        }
+    }
+
+
+
+
+    private fun disableBuyButton() {
+        binding.buy.visibility = View.GONE
+    }
+
+    private fun showBuyButton() {
+        binding.buy.visibility = View.VISIBLE
+    }
+
+    private fun showDownloadButton() {
+        binding.buy.visibility = View.GONE
+        binding.download.visibility = View.VISIBLE
+    }
+
+    private fun enableDownloadButton() {
+        // Enable the download button
+        binding.download.isEnabled = true
+        // Optionally, you can update the appearance of the download button
+        // For example, change the alpha value to make it fully visible
+        binding.download.alpha = 1.0f
+    }
+
+    private fun updateProfileCredit() {
+        val userFetcher = UserFetcher()
+
+        // Fetch the remaining credit score and update the profile activity
+        GlobalScope.launch(Dispatchers.Main) {
+            try {
+                val remainingCredit = userFetcher.fetchRemainingCredit()
+                // Pass the remaining credit value to ProfileActivity
+                val intent = Intent(this@ActivityPlayer, ProfileActivity::class.java)
+                intent.putExtra("remainingCredit", remainingCredit)
+                startActivity(intent)
+            } catch (e: Exception) {
+                Log.e(TAG, "Error updating profile credit", e)
+                // Handle error, for example, display a toast message
+                showToast("Error updating profile credit: ${e.message}")
+            }
+        }
+    }
+    private fun showToast(message: String) {
+        runOnUiThread {
+            Toast.makeText(this@ActivityPlayer, message, Toast.LENGTH_SHORT).show()
+        }
+    }
+    private fun showGif(show:Boolean) {
+        // Show the GIF ImageView
+        if(show)
+            binding.songGifImageView.visibility = View.VISIBLE
+        else{
+            binding.songGifImageView.visibility=View.GONE
+        }
+    }
+    private fun playOfflineSong(currentSongIndex: Int) {
+        val song = offlineSongs?.get(currentSongIndex)
+        binding.songTitleTextview.text = song?.title
+        binding.songSubtitleTextview.text = song?.subtitle
+        Glide.with(binding.songCover).load(song?.coverUrl)
+            .circleCrop()
+            .into(binding.songCover)
+        Glide.with(binding.songGifImageView).load(R.drawable.media_playing)
+            .circleCrop()
+            .into(binding.songGifImageView)
+        song?.url?.let { url ->
+            mediaPlayer?.apply {
+                reset()
+                setDataSource(url)
+                setOnPreparedListener { mp ->
+                    // Start playback when prepared
+                    mp.start()
+                    val totalLength = mediaPlayer?.duration ?: 0
+                    binding.endChronometer.text = formatTime(totalLength)
+                    createUpdateSeekBarRunnable().run()
+                    isSongPlaying = true
+                    binding.play.setBackgroundResource(R.drawable.baseline_pause_24)
+                }
+                prepareAsync()
+            }
+        }
+    }
+
+
+
+
     private fun playSong(currentSongIndex: Int) {
         FirebaseFirestore.getInstance().collection("songs")
             .document(songList!![currentSongIndex]).get()
-            .addOnSuccessListener {
-                val song=it.toObject(SongsModel::class.java)
-                binding.songTitleTextview.text = title
-                binding.songSubtitleTextview.text  = song?.title
-                Glide.with(binding.songCover).load(song?.coverUrl)
-                    .circleCrop()
-                    .into(binding.songCover)
-                Glide.with(binding.songGifImageView).load(R.drawable.media_playing)
-                    .circleCrop()
-                    .into(binding.songGifImageView)
+            .addOnSuccessListener { documentSnapshot ->
+                // Check if the document exists and contains data
+                if (documentSnapshot.exists() && documentSnapshot.data != null) {
+                    val song = documentSnapshot.toObject(SongsModel::class.java)
+                    if (song != null) {
+                        // Update UI with song details
+                        binding.songTitleTextview.text = song.title
+                        binding.songSubtitleTextview.text = song.subtitle
+                        Glide.with(binding.songCover).load(song.coverUrl)
+                            .circleCrop()
+                            .into(binding.songCover)
+                        Glide.with(binding.songGifImageView).load(R.drawable.media_playing)
+                            .circleCrop()
+                            .into(binding.songGifImageView)
 
-                song?.url?.let { url ->
-                    mediaPlayer?.apply {
-                        reset()
-                        setDataSource(url)
-                        setOnPreparedListener { mp ->
-                            // Start playback when prepared
-                            mp.start()
-                            val totalLength = mediaPlayer?.duration ?: 0
-                            binding.endChronometer.text = formatTime(totalLength)
-                            createUpdateSeekBarRunnable().run()
-                            isSongPlaying  = true
-                            binding.play.setBackgroundResource(R.drawable.baseline_pause_24)
+                        // Load song from URL
+                        song.url?.let { url ->
+                            isSongPurchased(song.id!!,
+                                onSuccess = { isPurchased ->
+                                    if (isPurchased) {
+                                        // Song is purchased, play the full song
+                                        playFullSong(url)
+                                    } else {
+                                        // Song is not purchased, play it for a limited time
+                                        playSongForLimitedTime(url)
+                                    }
+                                },
+                                onFailure = { exception ->
+                                    // Handle failure to check song purchase status
+                                    Log.e(TAG, "Error checking song purchase status", exception)
+                                    showToast("Failed to check song purchase status")
+                                }
+                            )
                         }
-                        setOnErrorListener { mp, what, extra ->
-                            // Handle error here (optional)
-                            return@setOnErrorListener false
-                        }
-                        prepareAsync()
+                    } else {
+                        // Handle case where the document exists but cannot be converted to SongsModel
                     }
+                } else {
+                    // Handle case where the document doesn't exist or doesn't contain data
                 }
             }
-            .addOnFailureListener {
-
+            .addOnFailureListener { exception ->
+                // Handle failure to retrieve song data
+                Log.e(TAG, "Error fetching song data", exception)
+                showToast("Failed to fetch song data: ${exception.message}")
             }
-
-
-
     }
 
+
+
+    private fun playFullSong(songUrl: String) {
+        mediaPlayer?.apply {
+            reset()
+            setDataSource(songUrl)
+            setOnPreparedListener { mp ->
+                mp.start()
+                val totalLength = mediaPlayer?.duration ?: 0
+                binding.endChronometer.text = formatTime(totalLength)
+                createUpdateSeekBarRunnable().run()
+                isSongPlaying = true
+                binding.play.setBackgroundResource(R.drawable.baseline_pause_24)
+            }
+            setOnErrorListener { mp, what, extra ->
+
+                return@setOnErrorListener false
+            }
+            prepareAsync()
+        }
+    }
+    private fun updateSeekBarAndTime(mediaPlayer: MediaPlayer?) {
+        mediaPlayer?.let { player ->
+            val totalDuration = player.duration
+            binding.seekBar.max = totalDuration
+
+            val timer = Timer()
+            timer.scheduleAtFixedRate(object : TimerTask() {
+                override fun run() {
+                    if (player.isPlaying) {
+                        val currentPosition = player.currentPosition
+                        runOnUiThread {
+                            binding.seekBar.progress = currentPosition
+                            binding.startingChronometer.text = formatTime(currentPosition)
+                            binding.endChronometer.text = formatTime(totalDuration - currentPosition)
+                        }
+                    }
+                }
+            }, 0, 1000)
+
+            player.setOnCompletionListener {
+                timer.cancel()
+            }
+        }
+    }
+
+
+    // Function to format time in MM:SS format
     private fun formatTime(durationInMillis: Int): String {
         val minutes = (durationInMillis / 1000) / 60
         val seconds = (durationInMillis / 1000) % 60
         return String.format("%02d:%02d", minutes, seconds)
     }
+
     private fun createUpdateSeekBarRunnable(): Runnable {
         return Runnable {
             val duration = mediaPlayer?.duration ?: 0
@@ -527,47 +780,11 @@ class ActivityPlayer : AppCompatActivity(), Runnable {
             handler?.postDelayed(this, 1000)
         }
     }
-
-
-
-    private fun updateCreditScoreInProfileActivity() {
-        // Perform any actions needed before navigating to the profile activity
-        Toast.makeText(this@ActivityPlayer, "Updating profile...", Toast.LENGTH_SHORT).show()
-
-        // Navigate to the profile activity
-        val intent = Intent(this, ProfileActivity::class.java)
-        startActivity(intent)
+    private fun hideGif() {
+        // Hide the GIF ImageView
+        binding.songGifImageView.visibility = View.GONE
     }
-//    private fun downloadSong(song: SongsModel) {
-//        // Check if the song is already downloaded
-//        if (song.downloaded) {
-//            Toast.makeText(this, "Song is already downloaded", Toast.LENGTH_SHORT).show()
-//            return
-//        }
-//
-//        // Implement your download logic here
-//        // For example, you can mark the song as downloaded locally
-//        // and update its download status in Firestore
-//
-//        // Update the download status locally
-//        song.downloaded = true
-//
-//        // Update the download status in Firestore
-//        updateDownloadStatusInFirestore(song)
-//    }
-private fun downloadSong(song: SongsModel) {
-    val db = FirebaseFirestore.getInstance()
-    val songRef = db.collection("songs").document(song.id)
-    songRef.update("downloaded", true)
-        .addOnSuccessListener {
-            Toast.makeText(this@ActivityPlayer, "Song downloaded successfully", Toast.LENGTH_SHORT).show()
-            binding.download.visibility = View.GONE
-        }
-        .addOnFailureListener { e ->
-            Log.e(TAG, "Error updating song download status", e)
-            Toast.makeText(this@ActivityPlayer, "Failed to download song", Toast.LENGTH_SHORT).show()
-        }
-}
+
     override fun onDestroy() {
         super.onDestroy()
         mediaPlayer?.release()
@@ -578,64 +795,11 @@ private fun downloadSong(song: SongsModel) {
         val currentPosition = mediaPlayer?.currentPosition ?: 0
         binding.startingChronometer.text = formatTime(currentPosition)
         binding.seekBar.progress = currentPosition
-        handler?.postDelayed(this@ActivityPlayer, 1000) // Update every second
-    }
-    private fun toggleFavorite() {
-        currentSong.isFavorite = !currentSong.isFavorite
-
-        if (currentSong.isFavorite) {
-            // Song is marked as favorite
-            binding.favSong.setImageResource(R.drawable.baseline_favorite_24)
-            Toast.makeText(this, "Added to favorites", Toast.LENGTH_SHORT).show()
-        } else {
-            // Song is unmarked as favorite
-            binding.favSong.setImageResource(R.drawable.baseline_favorite_border_24)
-            Toast.makeText(this, "Removed from favorites", Toast.LENGTH_SHORT).show()
-        }
+        handler?.postDelayed(this, 1000) // Update every second
     }
 
-
-//    private fun updateDownloadStatusInFirestore(song: SongsModel) {
-//        // Update the 'downloaded' field of the song document in Firestore
-//        val db = FirebaseFirestore.getInstance()
-//        val songRef = db.collection("songs").document(song.id)
-//        songRef.update("downloaded", true)
-//            .addOnSuccessListener {
-//                Toast.makeText(this, "Song downloaded successfully", Toast.LENGTH_SHORT).show()
-//            }
-//            .addOnFailureListener { e ->
-//                Log.e(TAG, "Error updating download status in Firestore", e)
-//                Toast.makeText(this, "Failed to download song", Toast.LENGTH_SHORT).show()
-//            }
-//    }
-//    private fun downloadSong(songId: String) {
-//        val songRef = FirebaseFirestore.getInstance().collection("songs").document(songId)
-//
-//        // Check if the song is already downloaded
-//        songRef.get().addOnSuccessListener { document ->
-//            val downloaded = document.getBoolean("downloaded") ?: false
-//
-//            if (!downloaded) {
-//                // Perform the download operation here
-//                // Once downloaded, update the Firestore document to mark the song as downloaded
-//                songRef.update("downloaded", true)
-//                    .addOnSuccessListener {
-//                        // Update UI - Hide the download button
-//                        binding.download.visibility = View.GONE
-//                        Toast.makeText(this, "Song downloaded successfully", Toast.LENGTH_SHORT).show()
-//                    }
-//                    .addOnFailureListener { e ->
-//                        Toast.makeText(this, "Failed to download song", Toast.LENGTH_SHORT).show()
-//                        Log.e(TAG, "Error downloading song: $e")
-//                    }
-//            } else {
-//                // Song is already downloaded
-//                Toast.makeText(this, "Song is already downloaded", Toast.LENGTH_SHORT).show()
-//            }
-//        }
-//            .addOnFailureListener { e ->
-//                Log.e(TAG, "Error fetching song details: $e")
-//            }
-//    }
+    companion object {
+        private const val REQUEST_WRITE_EXTERNAL_STORAGE = 1
+    }
 
 }

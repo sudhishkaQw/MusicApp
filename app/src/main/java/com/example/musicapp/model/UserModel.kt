@@ -7,7 +7,8 @@ data class UserModel(
     val profileImage: String,
     val creditScore:Int,
     val uid:String,
-    val purchasedSongs: List<String> = emptyList()
+    val purchasedSongs: List<String> = emptyList(),
+    val favoriteSongs :List<String> = emptyList()
 
 ) {
     constructor() : this("", "",500,"",) {

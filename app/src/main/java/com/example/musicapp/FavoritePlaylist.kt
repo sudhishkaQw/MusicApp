@@ -1,13 +1,15 @@
 package com.example.musicapp
 
-import android.content.ContentValues.TAG
 import android.os.Bundle
-import android.util.Log
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.musicapp.adapter.FavoritePlaylistAdapter
+import com.example.musicapp.model.SongsModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 
 class FavoritePlaylist : AppCompatActivity() {
@@ -24,28 +26,38 @@ class FavoritePlaylist : AppCompatActivity() {
         favoriteSongsRecyclerView.layoutManager = LinearLayoutManager(this)
         userFetcher = UserFetcher()
         lifecycleScope.launch {
-            fetchFavoriteSongs()
+           fetchAndDisplayFavoriteSongs()
         }
 
 
     }
 
-    private suspend fun fetchFavoriteSongs() {
-        userFetcher.fetchFavoriteSongs(
-            onSuccess = { favoriteSongs ->
-                // Update the UI with the list of favorite songs
-                updateFavoriteSongs(favoriteSongs.map { it.id })
-            },
-            onFailure = { exception ->
-                // Handle failure to fetch favorite songs
-                // For example, show an error message
-                Log.e(TAG, "Failed to fetch favorite songs", exception)
+
+
+    private fun fetchAndDisplayFavoriteSongs() {
+        GlobalScope.launch(Dispatchers.Main) {
+            try {
+                val favoriteSongs = userFetcher.fetchFavoriteSongsForCurrentUser()
+                updateFavList(favoriteSongs)
+            } catch (e: Exception) {
+                // Handle error
+                e.printStackTrace()
             }
-        )
+        }
+    }
+
+    private fun updateFavList(favoriteSongs: List<SongsModel>) {
+        favoriteSongsAdapter.updateList(favoriteSongs)
+    }
+    companion object {
+        private const val TAG = "FavoriteActivity"
     }
 
 
-    private fun updateFavoriteSongs(newFavoriteSongIds: List<String>) {
-        favoriteSongsAdapter.updateFavoriteSongs(newFavoriteSongIds)
+
+    private fun showToast(message: String) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
+
+
 }
